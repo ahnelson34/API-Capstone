@@ -2,12 +2,15 @@
 const apiKeyLastFm = '77041af4177c0e5538058219c30940b0'
 const searchUrlLastFm = 'http://ws.audioscrobbler.com//2.0/'
 
+
+
 function formatLastFmQueryParams(params) {
   const queryItems = Object.keys(params)
     .map(api_key => `${encodeURIComponent(api_key)}=${encodeURIComponent(params[api_key])}`)
   return queryItems.join('&');
 }
 
+var searchHistory = [];
 
 function getTopTracks(artist) {
     const params = {
@@ -48,12 +51,12 @@ function displaySimilarArtists(responseJson) {
   $('#similar-artists-list').empty();
   for (let i=0; i < responseJson.similarartists.artist.length; i++){
     $('#similar-artists-list').append(
-      `<li><h3>${responseJson.similarartists.artist[i].name}</h3>
-      </li>`
+      `<ul><h3>${responseJson.similarartists.artist[i].name}</h3>
+      </ul>`
     )};
   $('#similar-artists').removeClass('hidden');  
 };
-
+//make similar artists accordion with li of music videos
 
 const apiKeyYouTube = 'AIzaSyC3YDvPKPEQcKDodu7Koq5S8IhCGVbsRXA'; 
 const searchURLYouTube = 'https://www.googleapis.com/youtube/v3/search';
@@ -82,7 +85,7 @@ function getYouTubeVideo(query) {
 }
 
 
-// change placeholder
+//rotates placeholder
 var inputPlaceholder = ["Queen", "Bob Marley", "Beyonce", "Kanye West", "Taylor Swift", "The Beatles", "Drake", "Frank Sinatra"];
 setInterval(function() {
     $("input[type='text']").attr("placeholder", inputPlaceholder[inputPlaceholder.push(inputPlaceholder.shift())-1]);
@@ -96,6 +99,7 @@ function computeHomeButton() {
         $('.site-info').removeClass('hidden');
         $('#js-error-message').addClass('hidden');
         $('#similar-artists').addClass('hidden');
+        $('#search-history').addClass('hidden');
     });
 }
 
@@ -108,7 +112,10 @@ function watchForm() {
       $('.site-info').addClass('hidden');
       $('#video-list').empty();
       $('#js-error-message').addClass('hidden');
+      $('#search-history').removeClass('hidden');
       const searchTermLastFm = $('#js-search-term').val();
+    
+      
       
     getSimilarArtists(searchTermLastFm)
       .then(response =>{

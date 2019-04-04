@@ -114,6 +114,21 @@ function watchForm() {
       $('#js-error-message').addClass('hidden');
       $('#search-history').removeClass('hidden');
       const searchTermLastFm = $('#js-search-term').val();
+      searchHistory.push(searchTermLastFm)
+      if (searchHistory.length > 10) {
+        searchHistory.shift();
+      };
+      console.log($('#search-history-list'))
+      $('#search-history-list').empty();
+      
+      searchHistory.forEach(searchItem =>{
+        $('#search-history-list').append(
+          `<li>${searchItem}</li>`)
+  
+      });
+       
+        
+  
     
       
       

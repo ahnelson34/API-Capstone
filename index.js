@@ -12,7 +12,7 @@ function formatLastFmQueryParams(params) {
 
 var searchHistory = [];
 
-function getTopTracks(artist) {
+function getTopTracks(artist, similar) {
     const params = {
         api_key: apiKeyLastFm,
         artist,
@@ -49,11 +49,40 @@ function getSimilarArtists(artist) {
 function displaySimilarArtists(responseJson) {
   console.log(responseJson);
   $('#similar-artists-list').empty();
+  if (responseJson.error != undefined || responseJson.similarartists.length == 0) {
+    $('#similar-artists-list').append(
+      `<p>No Similar Artists Found</p>`
+    )
+    $('#similar-artists').removeClass('hidden');  
+    return;
+  }
   for (let i=0; i < responseJson.similarartists.artist.length; i++){
     $('#similar-artists-list').append(
-      `<ul><h3>${responseJson.similarartists.artist[i].name}</h3>
-      </ul>`
-    )};
+      
+      `<button class="accordion${i} accordion"><h3>${responseJson.similarartists.artist[i].name}</h3></button>
+      <div class"panel" style="display:none">      
+      <ul id="video-list${i}"></ul>           
+      </div>      
+      <script>
+        var acc = document.getElementsByClassName("accordion${i}");
+        var i;
+        
+        for (i = 0; i < acc.length; i++) {
+          acc[i].addEventListener("click", function() {
+            this.classList.toggle("active");
+            var panel = this.nextElementSibling;
+            if (panel.style.display === "block") {
+              panel.style.display = "none";
+            } else {
+              panel.style.display = "block";
+            }
+          });
+        }
+        </script>`
+      
+    )
+    updateTopTracks(responseJson.similarartists.artist[i].name, i);
+  };
   $('#similar-artists').removeClass('hidden');  
 };
 //make similar artists accordion with li of music videos
@@ -141,62 +170,95 @@ function watchForm() {
       })
       .then(responseJson => displaySimilarArtists(responseJson))
       
-     
-    //need to display last.fm error message when found
-     getTopTracks(searchTermLastFm)
-      .then(response => {
-        if (response.ok) {
-        return response.json();
-        }
-        throw new Error(response.statusText);
-        
-        })
-        .then(responseJson => {   
-          var videoList = []; 
-          var videoQueries = [];      
-          for (let i = 0; i < responseJson.toptracks.track.length; i++){
-            
+     updateTopTracks(searchTermLastFm);
 
-            var videoItem = {
-              index: i,
-              title: undefined,
-              url: undefined
-            }
-
-            videoList.push(videoItem);
-
-            videoQueries.push(
-              getYouTubeVideo(`${responseJson.toptracks.track[i].artist.name} ${responseJson.toptracks.track[i].name}`)
-                 .then(response => {
-                  if (response.ok) {
-                    return response.json();
-                  }
-                  throw new Error(response.statusText);
-                  
-                })              
-              )
-          }
-          //promise to make sure videos are in corrct order
-          Promise.all(videoQueries)
-            .then(response => {              
-              for (var i = 0; i < videoList.length; i++) {
-                var responseJson = response[i]
-                $('#video-list').append(
-                  `<li><a href='https://www.youtube.com/watch?v=${responseJson.items[0].id.videoId}' target=_blank'><h3>${responseJson.items[0].snippet.title}</h3></a>
-                  <a href='https://www.youtube.com/watch?v=${responseJson.items[0].id.videoId}' target=_blank'>
-                  <img src='${responseJson.items[0].snippet.thumbnails.medium.url}'></a>
-                  </li>`
-                  
-                );
-              }
-              $('#results').removeClass('hidden');
-            })
-        })
-        .catch(err => {
-          $('#js-error-message').text(`Something went wrong: ${err.message}`);
-        });
       });
-    }                    
+    }
+    
+  function updateTopTracks(searchTermLastFm, similarId) {
+        //need to display last.fm error message when found
+        getTopTracks(searchTermLastFm)
+        .then(response => {
+          if (response.ok) {
+          return response.json();
+          }
+          throw new Error(response.statusText);
+          
+          })
+          .then(responseJson => {   
+            var videoList = []; 
+            var videoQueries = [];     
+            if (responseJson.toptracks == undefined) {
+              var uiId = '#video-list'
+                  if (similarId != undefined) {
+                    uiId = `${uiId}${similarId}`
+                  }
+
+                  if (responseJson.error != undefined || responseJson.items.length == 0) {
+                   $(uiId).append(
+                     `<li>no video found</li>`
+                   )
+                   $('#results').removeClass('hidden');
+                   return;
+              }
+            } 
+            for (let i = 0; i < responseJson.toptracks.track.length; i++){
+              
+  
+              var videoItem = {
+                index: i,
+                title: undefined,
+                url: undefined
+              }
+  
+              videoList.push(videoItem);
+  
+              videoQueries.push(
+                getYouTubeVideo(`${responseJson.toptracks.track[i].artist.name} ${responseJson.toptracks.track[i].name}`)
+                   .then(response => {
+                    if (response.ok) {
+                      return response.json();
+                    }
+                    throw new Error(response.statusText);
+                    
+                  })              
+                )
+            }
+            //promise to make sure videos are in corrct order
+            Promise.all(videoQueries)
+              .then(response => {              
+                for (var i = 0; i < videoList.length; i++) {
+                  var responseJson = response[i]
+                  var uiId = '#video-list'
+                  if (similarId != undefined) {
+                    uiId = `${uiId}${similarId}`
+                  }
+
+                  if (responseJson.items.length == 0) {
+                   $(uiId).append(
+                     `<li>no video found</li>`
+                   )
+                   break;
+                  }
+                  else {
+                    $(uiId).append(
+                      `<li><a href='https://www.youtube.com/watch?v=${responseJson.items[0].id.videoId}' target=_blank'><h3>${responseJson.items[0].snippet.title}</h3></a>
+                      <a href='https://www.youtube.com/watch?v=${responseJson.items[0].id.videoId}' target=_blank'>
+                      <img src='${responseJson.items[0].snippet.thumbnails.medium.url}'></a>
+                      </li>`
+                      
+                    );
+                  }
+                  
+                  
+                }
+                $('#results').removeClass('hidden');
+              })
+          })
+          .catch(err => {
+            $('#js-error-message').text(`Something went wrong: ${err.message}`);
+          });
+  }
 
   $(watchForm);
   computeHomeButton();

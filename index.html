@@ -7,31 +7,7 @@
     <title>Music Finder</title>
     <link rel="stylesheet" href="index.css">
     <script src="https://code.jquery.com/jquery-3.3.1.js" integrity="sha256-2Kok7MbOyxpgUVvAk/HJ2jigOSYS2auK4Pfzbm7uH60=" crossorigin="anonymous"></script>
-    <style>
-        .accordion {
-          background-color: #eee;
-          color: #444;
-          cursor: pointer;
-          padding: 18px;
-          width: 100%;
-          border: none;
-          text-align: left;
-          outline: none;
-          font-size: 15px;
-          transition: 0.4s;
-        }
-        
-        .active, .accordion:hover {
-          background-color: #ccc; 
-        }
-        
-        .panel {
-          padding: 0 18px;
-          display: none;
-          background-color: white;
-          overflow: hidden;
-        }
-        </style>
+    
 </head>
 <body>
     <header class="appLogo" role="banner">
@@ -52,26 +28,36 @@
         </form>
 
         <p id="js-error-message" class="error-message"></p>
-        
-        <section id="similar-artists" class="hidden">
-            <h2>Similar Artists:</h2>
-            <ul id="similar-artists-list"></ul>
-        </section>
-        <section id="results" class="hidden">
-            <h2>Top Videos:</h2>
-            <ul id="video-list"></ul> 
-        </section>
-
-        <section id="search-history" class="hidden">
-            <h2>Search History</h2>
-            <ul id="search-history-list"></ul>
-        </section>
-
         <section class="site-info">
             <h2>Welcome to Music Researcher!</h2>
             <h3>About the site:</h3>
             <p>Curious what a band's most popular songs are? Enter their name and we will display their top songs so that you can get a taste.</p>
         </section>
+        <div class="tabset hidden">
+            
+                <input type="radio" name="tabset" id="tab1" checked>
+                <label for="tab1">Top Videos</label>
+                
+                <input type="radio" name="tabset" id="tab2">
+                <label for="tab2">Similar Artists</label>
+                
+                <input type="radio" name="tabset" id="tab3">
+                <label for="tab3">Search History</label>
+                
+        <div class="tab-panels">
+        <section id="results" class="tab-panel hidden">
+            <ul id="video-list"></ul> 
+        </section>
+        <section id="similar-artists" class="tab-panel hidden">
+            <ul id="similar-artists-list"></ul>
+        </section>
+
+        <section id="search-history" class="tab-panel hidden">
+            <ul id="search-history-list"></ul>
+        </section>
+        </div>
+    </div>
+        
     </div>
     <script src="index.js"></script>
     

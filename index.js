@@ -1,6 +1,6 @@
 'use strict'
 const apiKeyLastFm = '77041af4177c0e5538058219c30940b0'
-const searchUrlLastFm = 'http://ws.audioscrobbler.com//2.0/'
+const searchUrlLastFm = 'https://ws.audioscrobbler.com//2.0/'
 
 
 
@@ -12,7 +12,7 @@ function formatLastFmQueryParams(params) {
 
 var searchHistory = [];
 
-function getTopTracks(artist, similar) {
+function fetchTopTracksLastFm(artist, similar) {
     const params = {
         api_key: apiKeyLastFm,
         artist,
@@ -46,6 +46,7 @@ function getSimilarArtists(artist) {
   return fetch(url);
 
 };
+
 function displaySimilarArtists(responseJson) {
   console.log(responseJson);
   $('#similar-artists-list').empty();
@@ -56,36 +57,28 @@ function displaySimilarArtists(responseJson) {
     $('#similar-artists').removeClass('hidden');  
     return;
   }
+
   for (let i=0; i < responseJson.similarartists.artist.length; i++){
+    let artistName = responseJson.similarartists.artist[i].name.trim();
     $('#similar-artists-list').append(
-      
-      `<button class="accordion${i} accordion"><h3>${responseJson.similarartists.artist[i].name}</h3></button>
-      <div class"panel" style="display:none">      
-      <ul id="video-list${i}"></ul>           
-      </div>      
-      <script>
-        var acc = document.getElementsByClassName("accordion${i}");
-        var i;
-        
-        for (i = 0; i < acc.length; i++) {
-          acc[i].addEventListener("click", function() {
-            this.classList.toggle("active");
-            var panel = this.nextElementSibling;
-            if (panel.style.display === "block") {
-              panel.style.display = "none";
-            } else {
-              panel.style.display = "block";
-            }
-          });
-        }
-        </script>`
-      
+      `<div class="accordion">
+            <div class="accordion-header">${artistName}</div>
+            <div class="accordion-content"><ul data-artist="${artistName}" id="video-list${i}"></ul></div>
+      </div>`
     )
-    updateTopTracks(responseJson.similarartists.artist[i].name, i);
+    
+    refreshTopTracks(artistName, i);
+    
   };
   $('#similar-artists').removeClass('hidden');  
 };
-//make similar artists accordion with li of music videos
+
+$(function(){
+  $("body").on("click", ".accordion .accordion-header", function() {
+    $(this).toggleClass("active").next().slideToggle();
+  });
+})
+
 
 const apiKeyYouTube = 'AIzaSyC3YDvPKPEQcKDodu7Koq5S8IhCGVbsRXA'; 
 const searchURLYouTube = 'https://www.googleapis.com/youtube/v3/search';
@@ -129,6 +122,7 @@ function computeHomeButton() {
         $('#js-error-message').addClass('hidden');
         $('#similar-artists').addClass('hidden');
         $('#search-history').addClass('hidden');
+        $('.tabset').addClass('hidden');
     });
 }
 
@@ -136,13 +130,16 @@ function computeHomeButton() {
 function watchForm() {
     $('form').submit(event => {      
       event.preventDefault();
-      $('#results').addClass('hidden');
       $('#similar-artists').addClass('hidden');
       $('.site-info').addClass('hidden');
       $('#video-list').empty();
       $('#js-error-message').addClass('hidden');
       $('#search-history').removeClass('hidden');
-      const searchTermLastFm = $('#js-search-term').val();
+      const searchTermLastFm = $('#js-search-term').val().trim();
+      $('#results').addClass('hidden');
+      $('.tabset').removeClass('hidden');
+      $('#tab1').prop('checked',true);
+      $('#video-list').attr('data-artist', searchTermLastFm);
       searchHistory.push(searchTermLastFm)
       if (searchHistory.length > 10) {
         searchHistory.shift();
@@ -156,10 +153,6 @@ function watchForm() {
   
       });
        
-        
-  
-    
-      
       
     getSimilarArtists(searchTermLastFm)
       .then(response =>{
@@ -169,15 +162,16 @@ function watchForm() {
         throw new Error(response.statusText);
       })
       .then(responseJson => displaySimilarArtists(responseJson))
-      
-     updateTopTracks(searchTermLastFm);
+     
+     refreshTopTracks(searchTermLastFm);
 
       });
     }
     
-  function updateTopTracks(searchTermLastFm, similarId) {
-        //need to display last.fm error message when found
-        getTopTracks(searchTermLastFm)
+  function refreshTopTracks(artistName, similarId) {
+        let $results = $(`ul[data-artist="${artistName}"]`);
+        $results.html('<li class="searching">Searching...</li>');
+        fetchTopTracksLastFm(artistName)
         .then(response => {
           if (response.ok) {
           return response.json();
@@ -203,7 +197,7 @@ function watchForm() {
               }
             } 
             for (let i = 0; i < responseJson.toptracks.track.length; i++){
-              
+              $results.find('.searching').remove();
   
               var videoItem = {
                 index: i,
@@ -224,24 +218,21 @@ function watchForm() {
                   })              
                 )
             }
-            //promise to make sure videos are in corrct order
+            //promise to make sure videos fetched and displayed in the corrct order
             Promise.all(videoQueries)
               .then(response => {              
                 for (var i = 0; i < videoList.length; i++) {
                   var responseJson = response[i]
-                  var uiId = '#video-list'
-                  if (similarId != undefined) {
-                    uiId = `${uiId}${similarId}`
-                  }
-
+                 
+                 
                   if (responseJson.items.length == 0) {
-                   $(uiId).append(
+                   $results.append(
                      `<li>no video found</li>`
                    )
                    break;
                   }
                   else {
-                    $(uiId).append(
+                    $results.append(
                       `<li><a href='https://www.youtube.com/watch?v=${responseJson.items[0].id.videoId}' target=_blank'><h3>${responseJson.items[0].snippet.title}</h3></a>
                       <a href='https://www.youtube.com/watch?v=${responseJson.items[0].id.videoId}' target=_blank'>
                       <img src='${responseJson.items[0].snippet.thumbnails.medium.url}'></a>

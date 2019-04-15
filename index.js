@@ -80,6 +80,7 @@ $(function(){
 })
 
 
+
 const apiKeyYouTube = 'AIzaSyC3YDvPKPEQcKDodu7Koq5S8IhCGVbsRXA'; 
 const searchURLYouTube = 'https://www.googleapis.com/youtube/v3/search';
 
@@ -113,32 +114,35 @@ setInterval(function() {
     $("input[type='text']").attr("placeholder", inputPlaceholder[inputPlaceholder.push(inputPlaceholder.shift())-1]);
 }, 3000);
 
-function computeHomeButton() {
-    $('.appLogo').on('click', '.logo', function(event) {
+function resetHtmlHomeButtonClick() {
         $('#js-search-term').val(''); 
         $('#video-list').empty();
-        $('#results').addClass('hidden');
-        $('.site-info').removeClass('hidden');
-        $('#js-error-message').addClass('hidden');
-        $('#similar-artists').addClass('hidden');
-        $('#search-history').addClass('hidden');
+        $('#results','#js-error-message','#similar-artists','#search-history').addClass('hidden');
         $('.tabset').addClass('hidden');
-    });
+        $('.site-info').removeClass('hidden');
 }
 
+function setHtmlSearchResults() {
+      $('#similar-artists','#js-error-message','#results').addClass('hidden');
+      $('.site-info').addClass('hidden');
+      $('#video-list').empty();
+      $('#search-history').removeClass('hidden');
+      $('.tabset').removeClass('hidden');
+      $('#tab1').prop('checked',true);
+}
+
+function computeHomeButton() {
+    $('.appLogo').on('click', '.logo', function(event) {
+      resetHtmlHomeButtonClick();
+        
+    });
+}
 
 function watchForm() {
     $('form').submit(event => {      
       event.preventDefault();
-      $('#similar-artists').addClass('hidden');
-      $('.site-info').addClass('hidden');
-      $('#video-list').empty();
-      $('#js-error-message').addClass('hidden');
-      $('#search-history').removeClass('hidden');
+      setHtmlSearchResults();
       const searchTermLastFm = $('#js-search-term').val().trim();
-      $('#results').addClass('hidden');
-      $('.tabset').removeClass('hidden');
-      $('#tab1').prop('checked',true);
       $('#video-list').attr('data-artist', searchTermLastFm);
       searchHistory.push(searchTermLastFm)
       if (searchHistory.length > 10) {
@@ -219,7 +223,7 @@ function watchForm() {
                 )
             }
             //promise to make sure videos fetched and displayed in the corrct order
-            Promise.all(videoQueries)
+            return Promise.all(videoQueries)
               .then(response => {              
                 for (var i = 0; i < videoList.length; i++) {
                   var responseJson = response[i]
